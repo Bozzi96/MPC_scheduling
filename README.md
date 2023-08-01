@@ -5,3 +5,4 @@ This project implements a Model Predictive Control (MPC) based scheduling system
 The scheduling system utilizes a Model Predictive Control approach to make real-time decisions on job allocation to machines. At each arrival of a new job, the system dynamically re-schedules the existing jobs on machines to achieve the best possible makespan
 
 ### Overleaf project
+Join the related overleaf project at: https://it.overleaf.com/2581723472cgqwthcjngdk
