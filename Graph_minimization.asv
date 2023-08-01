@@ -177,19 +177,8 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec)% Parameters:
     %show(prob)
     tic
     if ~isempty(sol_prec)
-        [startTime, completionTime, path] = getSchedulingState(sol_prec, G_init, G_j, P, sol_prec.gamma, length(S0));
-        k=1;
-        for i=1:size(startTime,1)
-            for j=1:size(startTime,2)
-                if startTime(i,j) <= S0(end) && completionTime(i,j) > 0
-                    start_prec(k) = s(i,path(i,j)) == startTime(i,j);
-                    compl_prec(k) = c(i,path(i,j)) == completionTime(i,j);
-                    k= k+1;
-                end
-            end
-        end
-            prob.Constraints.start_prec = start_prec;
-        prob.Constraints.start_prec = compl_prec;
+        prob.Constraints.start_prec = s == sol_prec.s(sol_prec.s <= S0(end))
+        prob.Constraints.start_prec = c == sol_prec.c(sol_prec.s <= S0(end))
     end
     [sol,val] = solve(prob,x0);
     toc
