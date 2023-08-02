@@ -1,4 +1,4 @@
-function sol = Graph_minimization(G,G_j,P, S0, sol_prec)% Parameters: 
+function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0)% Parameters: 
     % G = graph 
     % G_j = number of alternatives (rows in the flow-shop graph)
     % P = matrix with processing time of job j on machine m (jobs x machines)
@@ -11,7 +11,7 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec)% Parameters:
     % Set computation
     G_init = G ;
     % Pre processing dei dati
-    [G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init, P);
+    [G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init, P, M0);
     J = length(unique(G_j)); %jobs
     M = max(max(G)); %machines
     A = size(G_j,1);%alternatives
@@ -165,7 +165,7 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec)% Parameters:
     prob.Constraints.cons_gamma = cons_gamma;
     
     % Cost function
-    prob.Objective = C+sum(sum(s))+sum(sum(c));
+    prob.Objective = C%+sum(sum(s))+sum(sum(c));
     
     % Initial conditions
     x0.gamma = zeros(A,1);
@@ -176,14 +176,15 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec)% Parameters:
     %% Solve problem
     %show(prob)
     tic
+    %%% BEGIN: Dynamic scheduling (?)
     if ~isempty(sol_prec)
-        [startTime, completionTime, path] = getSchedulingState(sol_prec, G_init, G_j, P, sol_prec.gamma, length(S0));
+        [startTime, completionTime, path] = getSchedulingState(sol_prec, G_init, G_j, P, sol_prec.gamma, length(S0),M0);
         k=1;
-        for i=1:size(startTime,1)
-            for j=1:size(startTime,2)
-                if startTime(i,j) <= S0(end) && completionTime(i,j) > 0
-                    start_prec(k) = s(i,path(i,j)) == startTime(i,j);
-                    compl_prec(k) = c(i,path(i,j)) == completionTime(i,j);
+        for i=1:size(startTime,2)
+            for j=1:length(startTime{i})
+                if startTime{1,i}(j) <= S0(end) && completionTime{1,i}(j) > 0
+                    start_prec(k) = s(i,path(i,j)) == startTime{1,i}(j); % Impose the continuity between previous and current state
+                    compl_prec(k) = c(i,path(i,j)) == completionTime{1,i}(j); % startTime{1,i}(j) + P(i,path(i,j)) Impose the continuity between previous and current state
                     k= k+1;
                 end
             end
@@ -191,6 +192,7 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec)% Parameters:
             prob.Constraints.start_prec = start_prec;
         prob.Constraints.start_prec = compl_prec;
     end
+    %%% END: Dynamic scheduling
     [sol,val] = solve(prob,x0);
     toc
 end

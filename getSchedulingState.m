@@ -1,9 +1,7 @@
-function [startDates, endDates, path] =  getSchedulingState(sol, G_init, G_j, P, gamma, J_current)
-[G,~, M_init, aux, aux_alt] = pre_processing_graph(G_init, P);
+function [startDates, endDates, path] =  getSchedulingState(sol, G_init, G_j, P, gamma, J_current, M_init)
+[G,~, ~, aux, aux_alt] = pre_processing_graph(G_init, P, M_init);
     %J_current = length(unique(G_j)); %jobs
-    M = max(max(G)); %machines
-    A = size(G_j,1);%alternatives
-    D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints per each connection)
+    %M = max(max(G)); %machines
     
     mySol = G(gamma  > 0.1,:);
     mySol_init = mySol;
@@ -14,13 +12,12 @@ function [startDates, endDates, path] =  getSchedulingState(sol, G_init, G_j, P,
             end
         end
     end
-    startDates = [];
-    endDates = [];
-    for j=1:J_current-1
-        %TODO: filter to take into account only jobs that have already 
-        % arrived in the shopfloor. J_current-1 is wrong!!!
-         startDates(j,:)=sol.s(j,mySol(j,:));
-         endDates(j,:)=sol.c(j,mySol(j,:));
+    startDates = {};
+    endDates = {};
+    for j=1:size(mySol,1)
+        current_row = mySol(j,mySol(j,:)~=0); % Remove zero elements
+        startDates{j} =sol.s(j,current_row);
+        endDates{j}=sol.c(j,current_row);
     end
     path = G(gamma>0.1,:);
 end

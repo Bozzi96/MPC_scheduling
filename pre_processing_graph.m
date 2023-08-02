@@ -1,5 +1,9 @@
-function [G_final, P_final, M, aux, aux_alt] = pre_processing_graph(G, P)
-    M = max(max(G)); % find max number of machines
+function [G_final, P_final, M, aux, aux_alt] = pre_processing_graph(G, P, M0)
+    if nargin == 3
+        M = M0;
+    else
+        M = max(max(G)); % find max number of machines
+    end
     P_final = P; %initialize final processing matrix as the initial one
     delta = 1;
     aux = zeros(M,1);

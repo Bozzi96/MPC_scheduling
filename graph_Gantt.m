@@ -23,12 +23,16 @@ function graph_Gantt(sol, G_init, G_j, P, gamma)
     Number_of_tasks=M_init;
     col = maxdistcolor(J, @sRGB_to_OKLab); % From matlab file exchange
     for j=1:J
-         startDates=sol.s(j,mySol(j,:));
-         endDates=sol.c(j,mySol(j,:));
-         width=sol.c(j,mySol(j,:))-sol.s(j,mySol(j,:));
+        current_row = mySol(j,mySol(j,:)~=0); % Remove zero elements
+        startDates{j} =sol.s(j,current_row);
+        endDates{j}=sol.c(j,current_row);
+%          startDates=sol.s(j,mySol(j,:));
+%          endDates=sol.c(j,mySol(j,:));
+         %width=sol.c(j,mySol(j,:))-sol.s(j,mySol(j,:));
          varname(j) = "job " + num2str(j); 
-         for i=1:Number_of_tasks
-            plot([startDates(i),endDates(i)],[mySol_init(j,i),mySol_init(j,i)],'b','Linewidth',10,'Color',col(j,:), DisplayName=varname(j))
+         i=1;
+         for i=1:length(startDates{1,j})
+             plot([startDates{1,j}(i),endDates{1,j}(i)],[mySol_init(j,i),mySol_init(j,i)],'b','Linewidth',10,'Color',col(j,:), DisplayName=varname(j))
             hold on
         end
     end
@@ -36,7 +40,7 @@ function graph_Gantt(sol, G_init, G_j, P, gamma)
    legendUnq();  % From matlab file exchange
    legend('-DynamicLegend')
     ylabel('Machine');
-    ylim([0 6]);
+    ylim([0 M_init+1]);
 
 
 
