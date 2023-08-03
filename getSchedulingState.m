@@ -1,4 +1,4 @@
-function [startDates, endDates, path] =  getSchedulingState(sol, G_init, G_j, P, gamma, J_current, M_init)
+function [startDates, endDates, path] =  getSchedulingState(sol, G_init, G_j, P, gamma, M_init)
 [G,~, ~, aux, aux_alt] = pre_processing_graph(G_init, P, M_init);
     %J_current = length(unique(G_j)); %jobs
     %M = max(max(G)); %machines

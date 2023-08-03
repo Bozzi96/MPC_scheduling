@@ -1,4 +1,4 @@
-function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0)% Parameters: 
+function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parameters: 
     % G = graph 
     % G_j = number of alternatives (rows in the flow-shop graph)
     % P = matrix with processing time of job j on machine m (jobs x machines)
@@ -178,21 +178,29 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0)% Parameters:
     tic
     %%% BEGIN: Dynamic scheduling (?)
     if ~isempty(sol_prec)
-        [startTime, completionTime, path] = getSchedulingState(sol_prec, G_init, G_j, P, sol_prec.gamma, length(S0),M0);
+        [startTime, completionTime, path] = getSchedulingState(sol_prec, G_init, G_j, P, sol_prec.gamma, M0);
         k=1;
-        for i=1:size(startTime,2)
+        Gj_uni=unique(G_j,'stable');
+        job_prec=Gj_uni(S0<last_event);
+        for i=1:sum(S0<last_event)
+            % Loop for all the jobs already in the shop (before the last event)
             for j=1:length(startTime{i})
-                if startTime{1,i}(j) <= S0(end) && completionTime{1,i}(j) > 0
-                    start_prec(k) = s(i,path(i,j)) == startTime{1,i}(j); % Impose the continuity between previous and current state
-                    compl_prec(k) = c(i,path(i,j)) == completionTime{1,i}(j); % startTime{1,i}(j) + P(i,path(i,j)) Impose the continuity between previous and current state
+                if startTime{1,i}(j) < last_event && completionTime{1,i}(j) > 0
+                    start_prec(k) = s(job_prec(i),path(job_prec(i),j)) == startTime{1,i}(j); % Impose the continuity between previous and current state
+                    compl_prec(k) = c(job_prec(i),path(job_prec(i),j)) == completionTime{1,i}(j); % startTime{1,i}(j) + P(i,path(i,j)) Impose the continuity between previous and current state
                     k= k+1;
                 end
             end
         end
+        if exist ('start_prec','var')
             prob.Constraints.start_prec = start_prec;
-        prob.Constraints.start_prec = compl_prec;
+            prob.Constraints.start_prec = compl_prec;
+        end
     end
     %%% END: Dynamic scheduling
     [sol,val] = solve(prob,x0);
     toc
+%     if(isempty(sol.c))
+%         sol = sol_prec;
+%     end
 end

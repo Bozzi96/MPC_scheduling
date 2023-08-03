@@ -1,9 +1,9 @@
-function graph_Gantt(sol, G_init, G_j, P, gamma)
-    [G,~, M_init, aux, aux_alt] = pre_processing_graph(G_init, P);
+function graph_Gantt(sol, G_init, G_j, P, gamma, M0, graph_title)
+    [G,~, M_init, aux, aux_alt] = pre_processing_graph(G_init, P, M0);
     J = length(unique(G_j)); %jobs
-    M = max(max(G)); %machines
-    A = size(G_j,1);%alternatives
-    D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints per each connection)
+%     M = max(max(G)); %machines
+%     A = size(G_j,1);%alternatives
+%     D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints per each connection)
     
     mySol = G(gamma  > 0.1,:);
     mySol_init = mySol;
@@ -15,12 +15,12 @@ function graph_Gantt(sol, G_init, G_j, P, gamma)
         end
     end
     
-    t= 1:sol.C+1;
-    start_time = sol.s;
-    occupancy = zeros(M, length(t),J);
-    utilz = zeros (M_init,1);
+%     t= 1:sol.C+1;
+%     start_time = sol.s;
+%     occupancy = zeros(M, length(t),J);
+%     utilz = zeros (M_init,1);
     
-    Number_of_tasks=M_init;
+%     Number_of_tasks=M_init;
     col = maxdistcolor(J, @sRGB_to_OKLab); % From matlab file exchange
     for j=1:J
         current_row = mySol(j,mySol(j,:)~=0); % Remove zero elements
@@ -36,7 +36,7 @@ function graph_Gantt(sol, G_init, G_j, P, gamma)
             hold on
         end
     end
-    title('Gantt Graph')
+    title(graph_title)
    legendUnq();  % From matlab file exchange
    legend('-DynamicLegend')
     ylabel('Machine');
