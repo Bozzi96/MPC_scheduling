@@ -1,7 +1,7 @@
-function [startDates, endDates, path] =  getSchedulingState(sol, G_init, G_j, P, gamma, M_init)
+function [startTime, completionTime, path] =  getSchedulingState(sol, G_init, G_j, P, gamma, M_init)
+%%% Get the state of the system in order to save the operations already
+%%% performed and re-schedule jobs considering their past operations
 [G,~, ~, aux, aux_alt] = pre_processing_graph(G_init, P, M_init);
-    %J_current = length(unique(G_j)); %jobs
-    %M = max(max(G)); %machines
     
     mySol = G(gamma  > 0.1,:);
     mySol_init = mySol;
@@ -12,12 +12,12 @@ function [startDates, endDates, path] =  getSchedulingState(sol, G_init, G_j, P,
             end
         end
     end
-    startDates = {};
-    endDates = {};
+    startTime = {};
+    completionTime = {};
     for j=1:size(mySol,1)
         current_row = mySol(j,mySol(j,:)~=0); % Remove zero elements
-        startDates{j} =sol.s(j,current_row);
-        endDates{j}=sol.c(j,current_row);
+        startTime{j} =sol.s(j,current_row); % Get starting time
+        completionTime{j}=sol.c(j,current_row); % Get completion time
     end
-    path = G(gamma>0.1,:);
+    path = G(gamma>0.1,:); % Get the path chosen
 end

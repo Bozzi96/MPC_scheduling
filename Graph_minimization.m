@@ -158,14 +158,14 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
     % Decision variables constraints (gamma)
     cons_gamma = optimconstr(J,1);
     for j=1:J
-        idx = find(G_j == j); % for each possible alternative on job j
+        idx = G_j == j; % for each possible alternative on job j
         cons_gamma(j) = sum(gamma(idx)) == 1; % choose only one alternative
     end
     
     prob.Constraints.cons_gamma = cons_gamma;
     
     % Cost function
-    prob.Objective = C%+sum(sum(s))+sum(sum(c));
+    prob.Objective = C;%+sum(sum(s))+sum(sum(c));
     
     % Initial conditions
     x0.gamma = zeros(A,1);
@@ -176,8 +176,11 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
     %% Solve problem
     %show(prob)
     tic
-    %%% BEGIN: Dynamic scheduling (?)
+    %%% BEGIN: Dynamic scheduling --- save the "state" of the system
+    %%% until the current instant, for jobs already present in the shop
+    %%% that have already performed some operations in machines
     if ~isempty(sol_prec)
+        % Save the state of all jobs from previous event: start, completion, path
         [startTime, completionTime, path] = getSchedulingState(sol_prec, G_init, G_j, P, sol_prec.gamma, M0);
         k=1;
         Gj_uni=unique(G_j,'stable');
@@ -186,13 +189,17 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
             % Loop for all the jobs already in the shop (before the last event)
             for j=1:length(startTime{i})
                 if startTime{1,i}(j) < last_event && completionTime{1,i}(j) > 0
+                    % Save the state of the jobs that have already
+                    % performed some operations as new constraints
+                    % ---> Dynamic scheduling
                     start_prec(k) = s(job_prec(i),path(job_prec(i),j)) == startTime{1,i}(j); % Impose the continuity between previous and current state
                     compl_prec(k) = c(job_prec(i),path(job_prec(i),j)) == completionTime{1,i}(j); % startTime{1,i}(j) + P(i,path(i,j)) Impose the continuity between previous and current state
                     k= k+1;
                 end
             end
         end
-        if exist ('start_prec','var')
+        % Add the state constraints to the optimization problem
+        if exist ('start_prec','var') && exist ('compl_prec', 'var')
             prob.Constraints.start_prec = start_prec;
             prob.Constraints.start_prec = compl_prec;
         end
@@ -200,7 +207,4 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
     %%% END: Dynamic scheduling
     [sol,val] = solve(prob,x0);
     toc
-%     if(isempty(sol.c))
-%         sol = sol_prec;
-%     end
 end

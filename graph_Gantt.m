@@ -1,9 +1,6 @@
 function graph_Gantt(sol, G_init, G_j, P, gamma, M0, graph_title)
     [G,~, M_init, aux, aux_alt] = pre_processing_graph(G_init, P, M0);
     J = length(unique(G_j)); %jobs
-%     M = max(max(G)); %machines
-%     A = size(G_j,1);%alternatives
-%     D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints per each connection)
     
     mySol = G(gamma  > 0.1,:);
     mySol_init = mySol;
@@ -20,16 +17,12 @@ function graph_Gantt(sol, G_init, G_j, P, gamma, M0, graph_title)
 %     occupancy = zeros(M, length(t),J);
 %     utilz = zeros (M_init,1);
     
-%     Number_of_tasks=M_init;
     col = maxdistcolor(J, @sRGB_to_OKLab); % From matlab file exchange
     for j=1:J
         current_row = mySol(j,mySol(j,:)~=0); % Remove zero elements
         startDates{j} =sol.s(j,current_row);
         endDates{j}=sol.c(j,current_row);
-%          startDates=sol.s(j,mySol(j,:));
-%          endDates=sol.c(j,mySol(j,:));
-         %width=sol.c(j,mySol(j,:))-sol.s(j,mySol(j,:));
-         varname(j) = "job " + num2str(j); 
+        varname(j) = "job " + num2str(j); 
          i=1;
          for i=1:length(startDates{1,j})
              plot([startDates{1,j}(i),endDates{1,j}(i)],[mySol_init(j,i),mySol_init(j,i)],'b','Linewidth',10,'Color',col(j,:), DisplayName=varname(j))

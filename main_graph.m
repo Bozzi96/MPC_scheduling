@@ -41,7 +41,7 @@ P = [ 20 5 4 20 4 1
     10 4 5 3 10 9
     2 5 4 2 4 10]; % Processing time job j on machine m (JxM matrix)
 G_init0 = [1 2 3 5 0
-      1 4 1 3 1
+      1 2 3 4 1
       2 4 4 0 0
       2 1 5 4 0
       1 2 3 6 0
@@ -52,23 +52,27 @@ G_j0 = [1
       3
       4
       4]; % alternatives related to the jobs (Ax1 vector)
+
+% Set planned release time and real release time
 Release_planned = [0 0 5 7]';
-max_delay = 3;
-horizon = 2;
-%Release_real = Release_planned + randi([-max_delay max_delay], [length(Release_planned) 1]);
-Release_real = [0 2 4 6];
-Release_real(Release_real < 0) = 0;
-% % Sort data by release time
-R=[];
-for i=1:length(G_j0)
-    R=[R; Release_real(G_j0(i))];
-end
-sorted = table(G_init0,G_j0,R);
-sorted = sortrows(sorted,3);
-G_init0 = table2array(sorted(:,1));
-G_j0 = table2array(sorted(:,2));
-Release_real = sort(Release_real);
-P = P(unique(G_j0, 'stable'),:);
+max_delay = 3; % max delay that can occur on a job
+horizon = 2; % prediction horizon for MPC-scheduling
+Release_real = Release_planned + randi([-max_delay max_delay], [length(Release_planned) 1]);
+%Release_real = [0 2 4 6];
+Release_real(Release_real < 0) = 0; % Set release time to 0 as minimum release time
+Release_real = sort(Release_real); % Avoid possible job swap
+
+%%% TODO: Sort data by release time considering possible job swap
+% R=[];
+% for i=1:length(G_j0)
+%     R=[R; Release_real(G_j0(i))];
+% end
+% sorted = table(G_init0,G_j0,R);
+% sorted = sortrows(sorted,3);
+% G_init0 = table2array(sorted(:,1));
+% G_j0 = table2array(sorted(:,2));
+% Release_real = sort(Release_real);
+% P = P(unique(G_j0, 'stable'),:);
 
     % Pre processing of data
     M0 = max(max(G_init0));
@@ -78,23 +82,25 @@ P = P(unique(G_j0, 'stable'),:);
     A = size(G_j0,1);%alternatives
     D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints per each connection)
     
+
 %% SOLVE PROBLEM
 sol_noNoise = [];
 for t=1:length(unique(Release_real))
     last_event = unique(Release_real); % Find the events (i.e. release of products)
     % Consider the jobs currently present in the shopfloor
-    idx_job_in_shop = find(Release_real <= last_event(t));
-    job_in_shop = Release_real(idx_job_in_shop);
-    idx_job_predicted = find(Release_planned >= last_event(t) & Release_planned <= last_event(t) + horizon);
+    idx_job_in_shop = find(Release_real <= last_event(t)); % Index of jobs in the shop
+    jobs_in_shop = Release_real(idx_job_in_shop)'; % Jobs in the shop
+    idx_job_predicted = find(Release_planned >= last_event(t) & ...
+            Release_planned <= last_event(t) + horizon); % Index of job predicted to be in the shop
     job_diff = setdiff(idx_job_predicted,idx_job_in_shop);
-    job_predicted = Release_planned(job_diff)';
-    S0 = [job_in_shop job_predicted];
-   %S0 = Release_real(Release_planned <= last_event(t) + horizon);
+    job_predicted = Release_planned(job_diff); % Do not consider twice the jobs already in the shop
+    S0 = [jobs_in_shop job_predicted];
+    % Update open-shop graph structures to consider only jobs in the shop
+    % or in the prediction horizon
     G_j = G_j0(G_j0<=length(S0)); 
     G_init = G_init0(G_j0 <= length(S0),:);
 
-    %graph_plots(solMin, G_init, G_j, P, solMin.gamma);
-    %BigOmega =1:2:11;
+    %BigOmega =1:5:11; % Test with different values of noises
     BigOmega = 5;
     for i=1:length(BigOmega)
         u=1;
@@ -106,14 +112,18 @@ for t=1:length(unique(Release_real))
             new_omega = zeros(size(P));
             new_omega(1:size(solMax(u-1).omega,1), ...
                 1:size(solMax(u-1).omega,2)) = solMax(u-1).omega; % Fill the new omega with solMax.omega, and the remaining are zeros
-           solMin(j) = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0);
-             solaux = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0);
+           solMin(j) = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0, last_event(t));
+             solaux = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0, last_event(t));
             if(j > 1 & ismember(int8(solaux.gamma)',vec_gamma, 'rows') )
                 % if the solution found is already in the pool of
                 % solutions, exit the loop after finding the best one in
                 % the current pool
                 [minVal, minIdx ] = min(vertcat(solMin.C));
                 solOpt(i)=solMin(minIdx);
+                % Update the disturbances structure to match with the
+                % subpart of the scheduling considered (jobs currently in
+                % the shop or in the prediction horizon) and the original
+                % structure of the shop (all jobs considered)
                 new_disturbances = zeros(size(P));
                 new_disturbances(1:size(solMax(minIdx).omega,1), ...
                     1:size(solMax(minIdx).omega,2)) = solMax(minIdx).omega;
