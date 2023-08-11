@@ -6,9 +6,9 @@ The scheduling system utilizes a Model Predictive Control approach to make real-
 
 ## Test
 To test the dynamic and offline scheduling for comparison, you need to:
-- Create the **G_init**, **G_j** variables '(G_init0, G_j0 for dynamic scheduling, G_init, G_j for offline scheduling)'
+- Create the **G_init**, **G_j** variables _(G_init0, G_j0 for dynamic scheduling, G_init, G_j for offline scheduling)_
 - Create the BigOmega values before the optimization loop
-- If BigOmega has more than one value, choose the element to plot in the **graph_gantt** '(sol_noNoise(i) and solOpt(i) in the last lines of the code)'
+- If BigOmega has more than one value, choose the element to plot in the **graph_gantt** _(sol_noNoise(i) and solOpt(i) in the last lines of the code)_
 
 ### Overleaf project
 Join the related overleaf project at: https://it.overleaf.com/2581723472cgqwthcjngdk
