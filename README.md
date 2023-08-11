@@ -4,5 +4,11 @@ This project implements a Model Predictive Control (MPC) based scheduling system
 ## How It Works
 The scheduling system utilizes a Model Predictive Control approach to make real-time decisions on job allocation to machines. At each arrival of a new job, the system dynamically re-schedules the existing jobs on machines to achieve the best possible makespan
 
+## Test
+To test the dynamic and offline scheduling for comparison, you need to:
+- Create the **G_init**, **G_j** variables '(G_init0, G_j0 for dynamic scheduling, G_init, G_j for offline scheduling)'
+- Create the BigOmega values before the optimization loop
+- If BigOmega has more than one value, choose the element to plot in the **graph_gantt** '(sol_noNoise(i) and solOpt(i) in the last lines of the code)'
+
 ### Overleaf project
 Join the related overleaf project at: https://it.overleaf.com/2581723472cgqwthcjngdk

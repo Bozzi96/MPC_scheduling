@@ -1,8 +1,14 @@
-function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parameters: 
-    % G = graph 
-    % G_j = number of alternatives (rows in the flow-shop graph)
+function sol = OpenShop_minimizeMakespan(G,G_j,P, S0)
+    % Parameters: 
+    % G = graph matrix, comprising all possible alternatives for all jobs
+    % If some jobs need to pass through less machines, put 0 in the last
+    % columns of the graph G
+    % G_j = alternatives vector, each row contains the job to which it is
+    % referred the corresponding row in the graph G
     % P = matrix with processing time of job j on machine m (jobs x machines)
     % S0 = arrival time of jobs in the shop
+
+    
     % SETS: (sets are re-computed from G and G_j automatically!)
     % J = jobs; M = machines; A = alternatives; D = disjunctive connections
     
@@ -11,7 +17,7 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
     % Set computation
     G_init = G ;
     % Pre processing dei dati
-    [G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init, P, M0);
+    [G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init, P);
     J = length(unique(G_j)); %jobs
     M = max(max(G)); %machines
     A = size(G_j,1);%alternatives
@@ -66,10 +72,10 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
             gamma_aux = 0;
             [idx_m,~] = find(G(:,:) == m); % find the row in which machine m is present among the rows of job j
             if(~isempty(idx_m))
-                shared_idx = intersect(idx, idx_m); % find intersection between wors of job j and rowa in which machine m is present
+                shared_idx = intersect(idx, idx_m); % find intersection between rows of job j and rowa in which machine m is present
                 if(~isempty(shared_idx))
-                    for index=1:size(shared_idx)
-                        gamma_aux = gamma_aux+ gamma(shared_idx(index)); % add the alternatives
+                    for k=1:size(shared_idx)
+                        gamma_aux = gamma_aux+ gamma(shared_idx(k)); % add the alternatives
                     end
                     cons_processingTime(i) = c(j,m) == s(j,m) + P(j,m)*gamma_aux;
                 else
@@ -158,14 +164,14 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
     % Decision variables constraints (gamma)
     cons_gamma = optimconstr(J,1);
     for j=1:J
-        idx = G_j == j; % for each possible alternative on job j
+        idx = find(G_j == j); % for each possible alternative on job j
         cons_gamma(j) = sum(gamma(idx)) == 1; % choose only one alternative
     end
     
     prob.Constraints.cons_gamma = cons_gamma;
     
     % Cost function
-    prob.Objective = C;%+sum(sum(s))+sum(sum(c));
+    prob.Objective = C+sum(sum(s))+sum(sum(c));
     
     % Initial conditions
     x0.gamma = zeros(A,1);
@@ -176,35 +182,6 @@ function sol = Graph_minimization(G,G_j,P, S0, sol_prec, M0, last_event)% Parame
     %% Solve problem
     %show(prob)
     tic
-    %%% BEGIN: Dynamic scheduling --- save the "state" of the system
-    %%% until the current instant, for jobs already present in the shop
-    %%% that have already performed some operations in machines
-    if ~isempty(sol_prec)
-        % Save the state of all jobs from previous event: start, completion, path
-        [startTime, completionTime, path] = getSchedulingState(sol_prec, G_init, G_j, P, sol_prec.gamma, M0);
-        index=1;
-        Gj_uni=unique(G_j,'stable');
-        job_prec=Gj_uni(S0<last_event);
-        for i=1:sum(S0<last_event)
-            % Loop for all the jobs already in the shop (before the last event)
-            for j=1:length(startTime{i})
-                if startTime{1,i}(j) < last_event && completionTime{1,i}(j) > 0
-                    % Save the state of the jobs that have already
-                    % performed some operations as new constraints
-                    % ---> Dynamic scheduling
-                    start_prec(index) = s(job_prec(i),path(job_prec(i),j)) == startTime{1,i}(j); % Impose the continuity between previous and current state
-                    compl_prec(index) = c(job_prec(i),path(job_prec(i),j)) == completionTime{1,i}(j); % startTime{1,i}(j) + P(i,path(i,j)) Impose the continuity between previous and current state
-                    index= index+1;
-                end
-            end
-        end
-        % Add the state constraints to the optimization problem
-        if exist ('start_prec','var') && exist ('compl_prec', 'var')
-            prob.Constraints.start_prec = start_prec;
-            prob.Constraints.start_prec = compl_prec;
-        end
-    end
-    %%% END: Dynamic scheduling
     [sol,val] = solve(prob,x0);
     toc
 end

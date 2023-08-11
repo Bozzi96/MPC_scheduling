@@ -55,7 +55,7 @@ G_j0 = [1
 
 % Set planned release time and real release time
 Release_planned = [0 0 5 7]';
-max_delay = 3; % max delay that can occur on a job
+max_delay = 3; % max advance/delay on a job w.r.t. planned release time
 horizon = 2; % prediction horizon for MPC-scheduling
 Release_real = Release_planned + randi([-max_delay max_delay], [length(Release_planned) 1]);
 %Release_real = [0 2 4 6];
@@ -74,24 +74,25 @@ Release_real = sort(Release_real); % Avoid possible job swap
 % Release_real = sort(Release_real);
 % P = P(unique(G_j0, 'stable'),:);
 
-    % Pre processing of data
-    M0 = max(max(G_init0));
-    [G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init0, P);
-    J = length(unique(G_j0)); %jobs
-    M = max(max(G)); %machines
-    A = size(G_j0,1);%alternatives
-    D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints per each connection)
-    
+% Pre processing of data
+M0 = max(max(G_init0));
+[G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init0, P);
+J = length(unique(G_j0)); %jobs
+M = max(max(G)); %machines
+A = size(G_j0,1);%alternatives
+D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints per each connection)
+
 
 %% SOLVE PROBLEM
 sol_noNoise = [];
-for t=1:length(unique(Release_real))
-    last_event = unique(Release_real); % Find the events (i.e. release of products)
+events = unique(Release_real); % Find the events (i.e. release of products)
+% Loop through each "event" (i.e. arrival of a new job)
+for t=1:length(events)
     % Consider the jobs currently present in the shopfloor
-    idx_job_in_shop = find(Release_real <= last_event(t)); % Index of jobs in the shop
+    idx_job_in_shop = find(Release_real <= events(t)); % Index of jobs in the shop
     jobs_in_shop = Release_real(idx_job_in_shop)'; % Jobs in the shop
-    idx_job_predicted = find(Release_planned >= last_event(t) & ...
-            Release_planned <= last_event(t) + horizon); % Index of job predicted to be in the shop
+    idx_job_predicted = find(Release_planned >= events(t) & ...
+            Release_planned <= events(t) + horizon); % Index of job predicted to be in the shop
     job_diff = setdiff(idx_job_predicted,idx_job_in_shop);
     job_predicted = Release_planned(job_diff); % Do not consider twice the jobs already in the shop
     S0 = [jobs_in_shop job_predicted];
@@ -102,18 +103,19 @@ for t=1:length(unique(Release_real))
 
     %BigOmega =1:5:11; % Test with different values of noises
     BigOmega = 5;
+    % Bouncing algorithm --> Find the best trade-off solution
     for i=1:length(BigOmega)
         u=1;
         vec_gamma = [];
-        sol_noNoise = Graph_minimization(G_init,G_j,P, S0, sol_noNoise,M0, last_event(t));
+        sol_noNoise = Graph_minimization(G_init,G_j,P, S0, sol_noNoise,M0, events(t));
        solMax(u) = Graph_maximization(G_init,G_j,P,sol_noNoise,BigOmega(i), S0);
         for j=1:20
             u=u+1;
             new_omega = zeros(size(P));
             new_omega(1:size(solMax(u-1).omega,1), ...
                 1:size(solMax(u-1).omega,2)) = solMax(u-1).omega; % Fill the new omega with solMax.omega, and the remaining are zeros
-           solMin(j) = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0, last_event(t));
-             solaux = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0, last_event(t));
+           solMin(j) = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0, events(t));
+             solaux = Graph_minimization(G_init,G_j,P+P.*new_omega, S0, [], M0, events(t));
             if(j > 1 & ismember(int8(solaux.gamma)',vec_gamma, 'rows') )
                 % if the solution found is already in the pool of
                 % solutions, exit the loop after finding the best one in
