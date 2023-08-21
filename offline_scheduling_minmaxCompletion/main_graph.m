@@ -1,4 +1,4 @@
-clear; clc; close all;
+clear; clc; %close all;
 P = [ 20 5 4 20 4 1
     2 3 1 10 3 3
     10 4 5 3 10 9
@@ -15,9 +15,31 @@ G_j = [1
       3
       4
       4]; % alternatives related to the jobs (Ax1 vector)
+%%% Example 3: Case study
+P = [9 5 7 10 4 12
+     4 7 3 7 1 10
+     5 7 6 3 10 1
+     4 3 10 6 4 5
+     2 4 7 3 5 2
+     1 6 5 3 6 8];
 
+G_init = [1 2 3 4 6
+           1 3 5 6 0
+           1 2 3 4 5
+           1 2 4 5 0
+           1 2 5 6 0
+           1 2 3 5 0
+           1 4 3 6 5
+           1 2 6 5 3
+           1 2 6 5 3
+           1 2 4 5 6
+           1 3 4 5 0
+           1 2 3 4 6
+           1 3 4 6 0];
+G_j = [1 1 2 2 3 3 3 4 5 5 6 6 6]';
+S0= [0 2 4 7 10 12]';
 % Set planned release time and real release time
-S0 = [0 0 5 7]';
+%S0 = [0 0 5 7]';
     % Pre processing of data
     [G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init, P);
     J = length(unique(G_j)); %jobs
@@ -59,7 +81,7 @@ S0 = [0 0 5 7]';
                 disturbances(i,:,:) = solMax(u-1).omega;
                 break
             end
-            if (j>=20)
+            if (j>=10)
                 % After a predefined number of iterations, exit the loop
                 [minVal, minIdx ] = min(vertcat(solMin.C));
                 solOpt(i)=solMin(minIdx);

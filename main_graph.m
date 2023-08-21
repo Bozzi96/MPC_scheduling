@@ -36,31 +36,54 @@ clear; clc; %close all;
 % Release_planned = [0 0 30]';
 
 %%% EXAMPLE 2: Quick
-P = [ 20 5 4 20 4 1
-    2 3 1 10 3 3
-    10 4 5 3 10 9
-    2 5 4 2 4 10]; % Processing time job j on machine m (JxM matrix)
-G_init0 = [1 2 3 5 0
-      1 2 3 4 1
-      2 4 4 0 0
-      2 1 5 4 0
-      1 2 3 6 0
-      1 4 5 2 5]; % graph path (AxN matrix, N = max(length(Jobs))
-G_j0 = [1
-      1
-      2
-      3
-      4
-      4]; % alternatives related to the jobs (Ax1 vector)
+% P = [ 20 5 4 20 4 1
+%     2 3 1 10 3 3
+%     10 4 5 3 10 9
+%     2 5 4 2 4 10]; % Processing time job j on machine m (JxM matrix)
+% G_init0 = [1 2 3 5 0
+%       1 2 3 4 1
+%       2 4 4 0 0
+%       2 1 5 4 0
+%       1 2 3 6 0
+%       1 4 5 2 5]; % graph path (AxN matrix, N = max(length(Jobs))
+% G_j0 = [1
+%       1
+%       2
+%       3
+%       4
+%       4]; % alternatives related to the jobs (Ax1 vector)
+%%% Example 3: Case study
+P = [9 5 7 10 4 12
+     4 7 3 7 1 10
+     5 7 6 3 10 1
+     4 3 10 6 4 5
+     2 4 7 3 5 2
+     1 6 5 3 6 8];
 
+G_init0 = [1 2 3 4 6
+           1 3 5 6 0
+           1 2 3 4 5
+           1 2 4 5 0
+           1 2 5 6 0
+           1 2 3 5 0
+           1 4 3 6 5
+           1 2 6 5 3
+           1 2 6 5 3
+           1 2 4 5 6
+           1 3 4 5 0
+           1 2 3 4 6
+           1 3 4 6 0];
+G_j0 = [1 1 2 2 3 3 3 4 5 5 6 6 6]';
+Release_planned = [0 2 4 7 10 12]';
 % Set planned release time and real release time
-Release_planned = [0 0 5 7]';
+%Release_planned = [0 0 5 7]';
 max_delay = 3; % max advance/delay on a job w.r.t. planned release time
 horizon = 2; % prediction horizon for MPC-scheduling
 Release_real = Release_planned + randi([-max_delay max_delay], [length(Release_planned) 1]);
 %Release_real = [0 2 4 6];
 Release_real(Release_real < 0) = 0; % Set release time to 0 as minimum release time
-Release_real = sort(Release_real); % Avoid possible job swap
+%Release_real = sort(Release_real); % Avoid possible job swap
+
 
 %%% TODO: Sort data by release time considering possible job swap
 % R=[];
@@ -142,7 +165,7 @@ for t=1:length(events)
                 disturbances(i,:,:) = solMax(u-1).omega;
                 break
             end
-            if (j>=20)
+            if (j>=10)
                 % After a predefined number of iterations, exit the loop
                 [minVal, minIdx ] = min(vertcat(solMin.C));
                 solOpt(i)=solMin(minIdx);

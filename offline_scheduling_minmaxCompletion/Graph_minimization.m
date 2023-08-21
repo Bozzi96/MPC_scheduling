@@ -165,7 +165,7 @@ function sol = Graph_minimization(G,G_j,P, S0)% Parameters:
     prob.Constraints.cons_gamma = cons_gamma;
     
     % Cost function
-    prob.Objective = C+sum(sum(s))+sum(sum(c));
+    prob.Objective = C;%+sum(sum(s))+sum(sum(c));
     
     % Initial conditions
     x0.gamma = zeros(A,1);
