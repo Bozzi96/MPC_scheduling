@@ -1,3 +1,4 @@
+
 clear; clc; %close all;
 P = [ 20 5 4 20 4 1
     2 3 1 10 3 3
@@ -51,8 +52,9 @@ S0= [0 2 4 7 10 12]';
 %% SOLVE PROBLEM
 
     %graph_plots(solMin, G_init, G_j, P, solMin.gamma);
-    %BigOmega =1:2:11;
-    BigOmega = 5;
+    BigOmega =1:3:10;
+    %BigOmega = 5;
+    tStart = tic;
     for i=1:length(BigOmega)
         u=1;
         vec_gamma = [];
@@ -94,7 +96,7 @@ S0= [0 2 4 7 10 12]';
         clear solMin
         %graph_plots(solMax(i), G_init, G_j, P, solMin.gamma);
     end
-
+tEnd = toc(tStart);
     %% Robust analysis
 %     for i=1:length(BigOmega)
 %         for j=1:1000

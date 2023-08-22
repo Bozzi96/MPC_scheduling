@@ -110,6 +110,7 @@ D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints
 sol_noNoise = [];
 events = unique(Release_real); % Find the events (i.e. release of products)
 % Loop through each "event" (i.e. arrival of a new job)
+tStart = tic;
 for t=1:length(events)
     % Consider the jobs currently present in the shopfloor
     idx_job_in_shop = find(Release_real <= events(t)); % Index of jobs in the shop
@@ -124,8 +125,8 @@ for t=1:length(events)
     G_j = G_j0(G_j0<=length(S0)); 
     G_init = G_init0(G_j0 <= length(S0),:);
 
-    %BigOmega =1:5:11; % Test with different values of noises
-    BigOmega = 5;
+    BigOmega =1:3:10; % Test with different values of noises
+    %BigOmega = 5;
     % Bouncing algorithm --> Find the best trade-off solution
     for i=1:length(BigOmega)
         u=1;
@@ -162,7 +163,10 @@ for t=1:length(events)
                 % If the solution is equivalent to the solution without
                 % disturbances, exit the loop (this is the best solution)
                  solOpt(i)=solMin(j);
-                disturbances(i,:,:) = solMax(u-1).omega;
+                new_disturbances = zeros(size(P));
+                new_disturbances(1:size(solMax(minIdx).omega,1), ...
+                    1:size(solMax(minIdx).omega,2)) = solMax(u-1).omega;
+                disturbances(i,:,:) = new_disturbances;
                 break
             end
             if (j>=10)
@@ -179,13 +183,14 @@ for t=1:length(events)
         clear solMin
      end
 end
+tEnd = toc(tStart);
     %% Robust analysis
-%     for i=1:length(BigOmega)
-%         for j=1:1000
-%         [robustCompletion(i,j), ~] = graph_minimization_robust(G_init,G_j,P,S0, solOpt(i).gamma, solOpt(i).delta, BigOmega(i));
-%         end
-%     end
-%     boxplot(robustCompletion')
+    for i=1:length(BigOmega)
+        for j=1:1000
+        [robustCompletion(i,j), ~] = graph_minimization_robust(G_init,G_j,P,S0, solOpt(i).gamma, solOpt(i).delta, BigOmega(i));
+        end
+    end
+    boxplot(robustCompletion')
 
 %Plot test
 %% Get noise-free solution
