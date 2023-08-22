@@ -82,7 +82,7 @@ horizon = 2; % prediction horizon for MPC-scheduling
 Release_real = Release_planned + randi([-max_delay max_delay], [length(Release_planned) 1]);
 %Release_real = [0 2 4 6];
 Release_real(Release_real < 0) = 0; % Set release time to 0 as minimum release time
-%Release_real = sort(Release_real); % Avoid possible job swap
+Release_real = sort(Release_real); % Avoid possible job swap
 
 
 %%% TODO: Sort data by release time considering possible job swap
