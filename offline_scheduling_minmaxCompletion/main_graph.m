@@ -1,22 +1,6 @@
-
-clear; clc; %close all;
-P = [ 20 5 4 20 4 1
-    2 3 1 10 3 3
-    10 4 5 3 10 9
-    2 5 4 2 4 10]; % Processing time job j on machine m (JxM matrix)
-G_init = [1 2 3 5 0
-      1 2 3 4 1
-      2 4 4 0 0
-      2 1 5 4 0
-      1 2 3 6 0
-      1 4 5 2 5]; % graph path (AxN matrix, N = max(length(Jobs))
-G_j = [1
-      1
-      2
-      3
-      4
-      4]; % alternatives related to the jobs (Ax1 vector)
-%%% Example 3: Case study
+%%% OFFLINE SCHEDULING
+clear; clc; close all;
+%%% Case study
 P = [9 5 7 10 4 12
      4 7 3 7 1 10
      5 7 6 3 10 1
@@ -30,30 +14,27 @@ G_init = [1 2 3 4 6
            1 2 4 5 0
            1 2 5 6 0
            1 2 3 5 0
-           1 4 3 6 5
+           1 3 4 6 0
            1 2 6 5 3
-           1 2 6 5 3
+           1 4 6 5 3
            1 2 4 5 6
            1 3 4 5 0
            1 2 3 4 6
            1 3 4 6 0];
 G_j = [1 1 2 2 3 3 3 4 5 5 6 6 6]';
-S0= [0 2 4 7 10 12]';
+S0= [0 2 4 7 10 12]'; % planned
+%S0 = [= [0 1 2 4 7 14]' ; % real
 % Set planned release time and real release time
-%S0 = [0 0 5 7]';
     % Pre processing of data
     [G, P, M_init, aux, aux_alt] = pre_processing_graph(G_init, P);
     J = length(unique(G_j)); %jobs
     M = max(max(G)); %machines
     A = size(G_j,1);%alternatives
-    D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints per each connection)
+    D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints for each connection)
     
 
 %% SOLVE PROBLEM
-
-    %graph_plots(solMin, G_init, G_j, P, solMin.gamma);
     BigOmega =1:3:10;
-    %BigOmega = 5;
     tStart = tic;
     for i=1:length(BigOmega)
         u=1;
@@ -94,7 +75,6 @@ S0= [0 2 4 7 10 12]';
         end
         clear solMax
         clear solMin
-        %graph_plots(solMax(i), G_init, G_j, P, solMin.gamma);
     end
 tEnd = toc(tStart);
     %% Robust analysis
@@ -111,5 +91,6 @@ tEnd = toc(tStart);
 figure()
 graph_Gantt(sol_noNoise, G_init, G_j, P, sol_noNoise.gamma, M_init, "Noise-free solution");
 % Get best solution between noise-free and robust
+i = randi(length(solOpt)); % Print random noise solution
 figure()
-graph_Gantt(solOpt, G_init, G_j, P, solOpt.gamma, M_init, "Best solution (trade-off optimal/robust)");
+graph_Gantt(solOpt(i), G_init, G_j, P, solOpt(i).gamma, M_init, "Best solution (trade-off optimal/robust), solution " + i);

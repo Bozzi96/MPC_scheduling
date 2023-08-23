@@ -1,58 +1,8 @@
-clear; clc; %close all;
+%%% MPC-BASED SCHEDULING
+clear; clc; close all;
 
 % Parameters of the problem
-%%% EXAMPLE 1: Manufacturing
-% G_init0 = [1 2 2 5 1
-%      1 2 3 5 1
-%      1 4 2 5 1
-%      1 4 3 5 1
-%      1 2 3 5 1
-%      1 2 4 5 1
-%      1 4 3 5 1
-%      1 4 4 5 1
-%      1 2 2 5 1
-%      1 2 4 5 1
-%      1 3 2 5 1
-%      1 3 4 5 1
-%     ];
-% G_j0 = [1
-%     1
-%     1
-%     1
-%     2
-%     2
-%     2
-%     2
-%     3
-%     3
-%     3
-%     3
-%     ];
-% P = [ 10 20 30 20 10
-%     10 20 30 20 10
-%     10 20 30 20 10
-%     ];
-% 
-% Release_planned = [0 0 30]';
-
-%%% EXAMPLE 2: Quick
-% P = [ 20 5 4 20 4 1
-%     2 3 1 10 3 3
-%     10 4 5 3 10 9
-%     2 5 4 2 4 10]; % Processing time job j on machine m (JxM matrix)
-% G_init0 = [1 2 3 5 0
-%       1 2 3 4 1
-%       2 4 4 0 0
-%       2 1 5 4 0
-%       1 2 3 6 0
-%       1 4 5 2 5]; % graph path (AxN matrix, N = max(length(Jobs))
-% G_j0 = [1
-%       1
-%       2
-%       3
-%       4
-%       4]; % alternatives related to the jobs (Ax1 vector)
-%%% Example 3: Case study
+%%% Case study
 P = [9 5 7 10 4 12
      4 7 3 7 1 10
      5 7 6 3 10 1
@@ -66,9 +16,9 @@ G_init0 = [1 2 3 4 6
            1 2 4 5 0
            1 2 5 6 0
            1 2 3 5 0
-           1 4 3 6 5
+           1 3 4 6 0
            1 2 6 5 3
-           1 2 6 5 3
+           1 4 6 5 3
            1 2 4 5 6
            1 3 4 5 0
            1 2 3 4 6
@@ -76,11 +26,10 @@ G_init0 = [1 2 3 4 6
 G_j0 = [1 1 2 2 3 3 3 4 5 5 6 6 6]';
 Release_planned = [0 2 4 7 10 12]';
 % Set planned release time and real release time
-%Release_planned = [0 0 5 7]';
 max_delay = 3; % max advance/delay on a job w.r.t. planned release time
 horizon = 2; % prediction horizon for MPC-scheduling
 Release_real = Release_planned + randi([-max_delay max_delay], [length(Release_planned) 1]);
-%Release_real = [0 2 4 6];
+%Release_real = [0 1 2 4 7 14]';
 Release_real(Release_real < 0) = 0; % Set release time to 0 as minimum release time
 Release_real = sort(Release_real); % Avoid possible job swap
 
@@ -96,6 +45,7 @@ Release_real = sort(Release_real); % Avoid possible job swap
 % G_j0 = table2array(sorted(:,2));
 % Release_real = sort(Release_real);
 % P = P(unique(G_j0, 'stable'),:);
+%%%
 
 % Pre processing of data
 M0 = max(max(G_init0));
@@ -103,7 +53,7 @@ M0 = max(max(G_init0));
 J = length(unique(G_j0)); %jobs
 M = max(max(G)); %machines
 A = size(G_j0,1);%alternatives
-D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints per each connection)
+D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints for each connection)
 
 
 %% SOLVE PROBLEM
@@ -126,7 +76,6 @@ for t=1:length(events)
     G_init = G_init0(G_j0 <= length(S0),:);
 
     BigOmega =1:3:10; % Test with different values of noises
-    %BigOmega = 5;
     % Bouncing algorithm --> Find the best trade-off solution
     for i=1:length(BigOmega)
         u=1;
@@ -197,5 +146,6 @@ tEnd = toc(tStart);
 figure()
 graph_Gantt(sol_noNoise, G_init, G_j, P, sol_noNoise.gamma, M0, "Noise-free solution");
 % Get best solution between noise-free and robust
+i = randi(length(solOpt)); % Print random noise solution
 figure()
-graph_Gantt(solOpt, G_init, G_j, P, solOpt.gamma, M0, "Best solution (trade-off optimal/robust)");
+graph_Gantt(solOpt(i), G_init, G_j, P, solOpt(i).gamma, M0, "Best solution (trade-off optimal/robust), solution " + i);
