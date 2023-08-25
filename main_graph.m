@@ -10,9 +10,9 @@ P = [9 5 7 10 4 12
      2 4 7 3 5 2
      1 6 5 3 6 8];
 
-G_init0 = [1 2 3 4 6
+G_init0 = [1 2 3 4 5
            1 3 5 6 0
-           1 2 3 4 5
+           1 2 3 4 6
            1 2 4 5 0
            1 2 5 6 0
            1 2 3 5 0
@@ -60,7 +60,7 @@ D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints
 sol_noNoise = [];
 events = unique(Release_real); % Find the events (i.e. release of products)
 % Loop through each "event" (i.e. arrival of a new job)
-tStart = tic;
+
 for t=1:length(events)
     % Consider the jobs currently present in the shopfloor
     idx_job_in_shop = find(Release_real <= events(t)); % Index of jobs in the shop
@@ -68,14 +68,16 @@ for t=1:length(events)
     idx_job_predicted = find(Release_planned >= events(t) & ...
             Release_planned <= events(t) + horizon); % Index of job predicted to be in the shop
     job_diff = setdiff(idx_job_predicted,idx_job_in_shop);
-    job_predicted = Release_planned(job_diff); % Do not consider twice the jobs already in the shop
+    job_predicted = Release_planned(job_diff)'; % Do not consider twice the jobs already in the shop
     S0 = [jobs_in_shop job_predicted];
     % Update open-shop graph structures to consider only jobs in the shop
     % or in the prediction horizon
     G_j = G_j0(G_j0<=length(S0)); 
     G_init = G_init0(G_j0 <= length(S0),:);
 
-    BigOmega =1:3:10; % Test with different values of noises
+    %BigOmega =1:3:10; % Test with different values of noises
+    tStart = tic;
+    BigOmega = 5;
     % Bouncing algorithm --> Find the best trade-off solution
     for i=1:length(BigOmega)
         u=1;
@@ -139,13 +141,25 @@ tEnd = toc(tStart);
         [robustCompletion(i,j), ~] = graph_minimization_robust(G_init,G_j,P,S0, solOpt(i).gamma, solOpt(i).delta, BigOmega(i));
         end
     end
-    boxplot(robustCompletion')
-
+  %% Plot robust analysis
+boxplot(robustCompletion')
+hold on
+for i=1:length(BigOmega)
+    plot(i,solOpt(i).C, "b*")
+    %plot(i,min(robustCompletion(i,:)), "ko")
+end
+title("Robust analysis")
+ylabel("Completion time")
+xlabel("\Omega")
+xticklabels({'1', '4','7','10'})
 %Plot test
 %% Get noise-free solution
 figure()
 graph_Gantt(sol_noNoise, G_init, G_j, P, sol_noNoise.gamma, M0, "Noise-free solution");
+xlabel("Time")
 % Get best solution between noise-free and robust
 i = randi(length(solOpt)); % Print random noise solution
+i=4;
 figure()
-graph_Gantt(solOpt(i), G_init, G_j, P, solOpt(i).gamma, M0, "Best solution (trade-off optimal/robust), solution " + i);
+graph_Gantt(solOpt(i), G_init, G_j, P, solOpt(i).gamma, M0, "Best solution (trade-off optimal/robust), \Omega= " + BigOmega(i));
+xlabel("Time")

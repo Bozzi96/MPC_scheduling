@@ -34,7 +34,8 @@ S0= [0 2 4 7 10 12]'; % planned
     
 
 %% SOLVE PROBLEM
-    BigOmega =1:3:10;
+%    BigOmega =1:3:10;
+BigOmega = 5;
     tStart = tic;
     for i=1:length(BigOmega)
         u=1;
@@ -83,14 +84,24 @@ tEnd = toc(tStart);
 %         [robustCompletion(i,j), ~] = graph_minimization_robust(G_init,G_j,P,S0, solOpt(i).gamma, solOpt(i).delta, BigOmega(i));
 %         end
 %     end
-%     boxplot(robustCompletion')
-
-
+%%  Plot robust analysis 
+boxplot(robustCompletion')
+hold on
+for i=1:length(BigOmega)
+    plot(i,solOpt(i).C, "b*")
+    %plot(i,min(robustCompletion(i,:)), "ko")
+end
+ylabel("Completion time")
+xlabel("\Omega")
+xticklabels({'1', '4','7','10'})
 %Plot test
 %% Get noise-free solution
 figure()
 graph_Gantt(sol_noNoise, G_init, G_j, P, sol_noNoise.gamma, M_init, "Noise-free solution");
+xlabel("Time")
 % Get best solution between noise-free and robust
 i = randi(length(solOpt)); % Print random noise solution
+i=4;
 figure()
-graph_Gantt(solOpt(i), G_init, G_j, P, solOpt(i).gamma, M_init, "Best solution (trade-off optimal/robust), solution " + i);
+graph_Gantt(solOpt(i), G_init, G_j, P, solOpt(i).gamma, M_init, "Best solution (trade-off optimal/robust), \Omega= " + BigOmega(i));
+xlabel("Time")

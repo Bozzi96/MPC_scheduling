@@ -22,7 +22,7 @@ function graph_Gantt(sol, G_init, G_j, P, gamma, M0, graph_title)
         current_row = mySol(j,mySol(j,:)~=0); % Remove zero elements
         startDates{j} =sol.s(j,current_row);
         endDates{j}=sol.c(j,current_row);
-        varname(j) = "job " + num2str(j); 
+        varname(j) = "J_{" + num2str(j) + "}"; 
          i=1;
          for i=1:length(startDates{1,j})
              plot([startDates{1,j}(i),endDates{1,j}(i)],[mySol_init(j,i),mySol_init(j,i)],'b','Linewidth',10,'Color',col(j,:), DisplayName=varname(j))
