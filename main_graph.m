@@ -29,7 +29,7 @@ Release_planned = [0 2 4 7 10 12]';
 max_delay = 3; % max advance/delay on a job w.r.t. planned release time
 horizon = 2; % prediction horizon for MPC-scheduling
 Release_real = Release_planned + randi([-max_delay max_delay], [length(Release_planned) 1]);
-%Release_real = [0 1 2 4 7 14]';
+Release_real = [0 1 2 4 7 14]';
 Release_real(Release_real < 0) = 0; % Set release time to 0 as minimum release time
 Release_real = sort(Release_real); % Avoid possible job swap
 
@@ -60,7 +60,7 @@ D = compute_D_from_graph(G_init0,G_j0); % disjunctive connections (2 constraints
 sol_noNoise = [];
 events = unique(Release_real); % Find the events (i.e. release of products)
 % Loop through each "event" (i.e. arrival of a new job)
-
+paths_atm = zeros(length(events),J);
 for t=1:length(events)
     % Consider the jobs currently present in the shopfloor
     idx_job_in_shop = find(Release_real <= events(t)); % Index of jobs in the shop
@@ -77,7 +77,7 @@ for t=1:length(events)
 
     %BigOmega =1:3:10; % Test with different values of noises
     tStart = tic;
-    BigOmega = 5;
+    BigOmega = 4;
     % Bouncing algorithm --> Find the best trade-off solution
     for i=1:length(BigOmega)
         u=1;
@@ -132,7 +132,8 @@ for t=1:length(events)
         end
         clear solMax
         clear solMin
-     end
+    end
+    paths_atm(1:size(sol_noNoise.gamma),t) = sol_noNoise.gamma;
 end
 tEnd = toc(tStart);
     %% Robust analysis

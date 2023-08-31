@@ -1,4 +1,4 @@
-function [Completion, sol] = graph_minimization_robust(G,G_j,P, S0, gamma_rob, delta_rob, BigOmega)% Parameters: 
+function [Completion, sol, omega] = graph_minimization_robust(G,G_j,P, S0, gamma_rob, delta_rob, BigOmega, disturbances)% Parameters: 
     % G = graph 
     % G_j = number of alternatives (rows in the
     % flow-shop graph)
@@ -22,8 +22,8 @@ function [Completion, sol] = graph_minimization_robust(G,G_j,P, S0, gamma_rob, d
     A = size(G_j,1);%alternatives
     D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints per each connection)
     
-    S0 = zeros(J,1); % start time constraints
-    S0 = [0 0 0 0 0 0]';
+%     S0 = zeros(J,1); % start time constraints
+%     S0 = [0 0 0 0 0 0]';
     
     % Optimization problem
     prob = optimproblem('ObjectiveSense','min');
@@ -39,25 +39,29 @@ function [Completion, sol] = graph_minimization_robust(G,G_j,P, S0, gamma_rob, d
     C = optimvar('C', 1, 'LowerBound', 0);
     % Gamma and delta are parameters (path and sequencing is imposed)
     gamma = gamma_rob;
-    delta = delta_rob;
+    %delta = delta_rob;
+    delta = optimvar('delta', D, 1, 'Type', 'integer', 'LowerBound', 0, 'UpperBound', 1);
 
     % Create the noise with proper distribution and intensity
-    length_jobs_path = sum(find(G_init(gamma~=0,:))~=0);
-    tempOmega = randfixedsum(length_jobs_path,1,BigOmega,0,1);
-    idx = find(gamma> 0.1);
-    omega = zeros(J,M);
-    i=1;
-     for j=1:J
-            jobs = G(idx(j),:);
-            for m=1:M
-                if sum(ismember(jobs,m)) >0
-                    omega(j,m) = tempOmega(i);
-                    i = i+1;
-                end
-            end
-        end
-    
+    if nargin == 8
+        omega = disturbances;
+    else
 
+        length_jobs_path = sum(find(G_init(gamma~=0,:))~=0);
+        tempOmega = randfixedsum(length_jobs_path,1,BigOmega,0,1);
+        idx = find(gamma> 0.1);
+        omega = zeros(J,M);
+        i=1;
+         for j=1:J
+                jobs = G(idx(j),:);
+                for m=1:M
+                    if sum(ismember(jobs,m)) >0
+                        omega(j,m) = tempOmega(i);
+                        i = i+1;
+                    end
+                end
+         end
+    end
     %%% Constraints %%%
     
     % Start time > S0
@@ -183,15 +187,17 @@ function [Completion, sol] = graph_minimization_robust(G,G_j,P, S0, gamma_rob, d
 
     % Cost function
     % It doesn't involve C
-     prob.Objective = sum(sum(s))+sum(sum(c));
+     %prob.Objective = sum(sum(s))+sum(sum(c));
     
     % Initial conditions
     x0.C = 0;
     x0.c = zeros(J,M);
     x0.s = zeros(J,M);
+    x0.delta = zeros(D,1);
     %% Solve problem
     %show(prob)
-    opts=optimset('Display','off');
+%    opts=optimoptions('Display','off');
+    opts=optimoptions(@Intlinprog,'Display','off');
     [sol,val] = solve(prob,x0, 'Options', opts);
     Completion = sol.C;
 end
