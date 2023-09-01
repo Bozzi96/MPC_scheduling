@@ -9,3 +9,6 @@ To test the dynamic and offline scheduling for comparison, you need to:
 - Create the **G_init**, **G_j** variables _(G_init0, G_j0 for dynamic scheduling, G_init, G_j for offline scheduling)_
 - Create the **BigOmega** values before the optimization loop
 - If **BigOmega** has more than one value, choose the element to plot in the **graph_gantt** (_sol\_noNoise(i) and solOpt(i)_ in the last lines of the code in the respective _main\_graph_)
+
+ ### License
+ This project is licensed under the terms of the GNU General Public License v3.0
