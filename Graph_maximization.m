@@ -20,7 +20,7 @@ function [solMax,utilz] = Graph_maximization(G,G_j,P,sol, BigOmega, S0)% Paramet
     D = compute_D_from_graph(G_init,G_j); % disjunctive connections (2 constraints per each connection)
     
     % Optimization problem
-    prob = optimproblem('ObjectiveSense','max');
+    prob = optimproblem('ObjectiveSense','min');
     
     % Decision variables
     % s [j,m] = Start time of job j on machine m
@@ -31,12 +31,12 @@ function [solMax,utilz] = Graph_maximization(G,G_j,P,sol, BigOmega, S0)% Paramet
     s = optimvar('s', J, M, 'LowerBound', 0);
     c = optimvar('c', J, M, 'LowerBound', 0);
     C = optimvar('C', 1, 'LowerBound', 0);
-    delta = optimvar('delta', D, 1, 'Type', 'integer', 'LowerBound', 0, 'UpperBound', 1);
+    %delta = optimvar('delta', D, 1, 'Type', 'integer', 'LowerBound', 0, 'UpperBound', 1);
     omega = optimvar('omega', J, M, 'LowerBound', 0,'UpperBound',1);
     DeltaNew = optimvar('DeltaNew', J, 1,'LowerBound', 0);
     % Gamma are parameters (path is imposed)
     gamma = sol.gamma;
-
+    delta = sol.delta;
     %%% Constraints %%%
     % Start time > S0
     cons_startTime = optimconstr(J, M);
@@ -164,7 +164,7 @@ function [solMax,utilz] = Graph_maximization(G,G_j,P,sol, BigOmega, S0)% Paramet
    prob.Objective = C-10^4*sum(sum(s))-10^4*sum(sum(c))-10^6*sum(sum(DeltaNew));
     
     % Initial conditions
-    x0.delta = zeros(D,1);
+    %x0.delta = zeros(D,1);
     x0.C = 0;
     x0.c = zeros(J,M);
     x0.s = zeros(J,M);
